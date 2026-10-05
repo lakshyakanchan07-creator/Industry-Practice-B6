@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreshCart Market | Premium Online Grocery Store</title>
+    <meta name="description" content="Shop fresh organic groceries, farm-fresh produce, dairy, artisan bakery items, and pantry essentials online with instant delivery.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar" id="mainNavbar">
+        <div class="nav-container">
+            <a href="/" class="brand-logo" id="brandLogo">
+                <div class="brand-icon">🌱</div>
+                <div class="brand-text">Fresh<span>Cart</span></div>
+            </a>
+
+            <!-- Search Bar -->
+            <div class="search-wrapper">
+                <span class="search-icon">🔍</span>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="Search fresh fruits, organic milk, bakery, veggies..."
+                    autocomplete="off"
+                >
+            </div>
+
+            <!-- Navigation Actions -->
+            <div class="nav-actions">
+                <a href="/database" class="db-link-btn" style="text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem; padding:0.55rem 0.95rem; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:var(--radius-full); color:#065f46; font-weight:700; font-size:0.85rem; transition:var(--transition);">
+                    <span>🗄️</span> DB Design
+                </a>
+                <button class="cart-button" id="cartOpenBtn" aria-label="Open Shopping Cart">
+                    <div class="cart-icon-wrapper">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="8" cy="21" r="1"></circle>
+                            <circle cx="19" cy="21" r="1"></circle>
+                            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+                        </svg>
+                        <span class="cart-counter" id="navCartCount">0</span>
+                    </div>
+                    <span id="navCartTotal">₹0.00</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero / Welcome Banner -->
+    <section class="hero-banner">
+        <div class="hero-content">
+            <h1 class="hero-title">Farm-Fresh Groceries, Delivered to Your Door</h1>
+            <p class="hero-subtitle">100% Organic certified produce, sustainable dairy, and artisanal baked goods daily.</p>
+        </div>
+    </section>
+
+    <!-- Category Filter Bar -->
+    <nav class="categories-bar" aria-label="Product Categories" id="categoryFilterBar">
+        <button class="category-chip active" data-category="all" id="filter-all">
+            <span>✨</span> All Items
+        </button>
+        {% for cat in categories %}
+        <button class="category-chip" data-category="{{ cat.name }}" id="filter-cat-{{ cat.category_id }}">
+            {% if 'Fruit' in cat.name %}<span>🍎</span>
+            {% elif 'Dairy' in cat.name %}<span>🥛</span>
+            {% elif 'Bakery' in cat.name %}<span>🍞</span>
+            {% elif 'Vegetable' in cat.name %}<span>🥦</span>
+            {% else %}<span>🍯</span>{% endif %}
+            {{ cat.name }}
+        </button>
+        {% endfor %}
+    </nav>
+
+    <!-- Main Product Catalog Section -->
+    <main class="catalog-section">
+        <div class="catalog-header">
+            <div>
+                <h2 id="catalogHeading">Featured Groceries</h2>
+                <p class="item-count-label"><span id="visibleCount">{{ products|length }}</span> fresh items available</p>
+            </div>
+        </div>
+
+        <!-- Product Cards Grid -->
+        <div class="products-grid" id="productsGrid">
+            {% for item in products %}
+            <article 
+                class="product-card" 
+                data-id="{{ item.product_id }}"
+                data-name="{{ item.name }}"
+                data-category="{{ item.category_name }}"
+                data-price="{{ item.price }}"
+                data-unit="{{ item.unit }}"
+                data-image="{{ item.image_url }}"
+                id="product-card-{{ item.product_id }}"
+            >
+                <div class="card-image-wrap">
+                    <!-- Image Badge -->
+                    {% set badge_class = 'badge-fresh' %}
+                    {% if 'Organic' in item.badge %}{% set badge_class = 'badge-organic' %}
+                    {% elif 'Baked' in item.badge %}{% set badge_class = 'badge-freshly-baked' %}
+                    {% elif 'Farm' in item.badge %}{% set badge_class = 'badge-farm-fresh' %}
+                    {% elif 'Natural' in item.badge %}{% set badge_class = 'badge-natural' %}
+                    {% endif %}
+                    <span class="product-badge {{ badge_class }}">{{ item.badge }}</span>
+                    <span class="stock-tag">In Stock ({{ item.stock_quantity }})</span>
+                    <img 
+                        src="{{ item.image_url }}" 
+                        alt="{{ item.name }}" 
+                        class="card-image"
+                        loading="lazy"
+                    >
+                </div>
+                
+                <div class="card-content">
+                    <span class="product-category-name">{{ item.category_name }}</span>
+                    <h3 class="product-title">{{ item.name }}</h3>
+                    <p class="product-unit">Unit: {{ item.unit }}</p>
+
+                    <div class="card-footer">
+                        <div class="price-container">
+                            <span class="price-label">Price</span>
+                            <div class="price-value">
+                                <span class="price-currency">₹</span>{{ "%.2f"|format(item.price) }}
+                            </div>
+                        </div>
+
+                        <!-- Add To Cart Interactive Button Container -->
+                        <div class="card-action" id="action-box-{{ item.product_id }}">
+                            <button 
+                                class="btn-add-cart" 
+                                onclick="addToCart({{ item.product_id }}, '{{ item.name|replace("'", "\\'") }}', {{ item.price }}, '{{ item.unit }}', '{{ item.image_url }}')"
+                                id="btn-add-{{ item.product_id }}"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Slide-out Shopping Cart Drawer -->
+    <div class="cart-overlay" id="cartOverlay"></div>
+    <aside class="cart-drawer" id="cartDrawer" aria-label="Shopping Cart Drawer">
+        <div class="cart-header">
+            <h3>
+                <span>🛒</span> Your Cart (<span id="drawerItemCount">0</span>)
+            </h3>
+            <button class="btn-close-cart" id="cartCloseBtn" aria-label="Close cart">&times;</button>
+        </div>
+
+        <div class="cart-body" id="cartItemsContainer">
+            <!-- Populated via JavaScript -->
+            <div class="cart-empty" id="emptyCartPlaceholder">
+                <div class="cart-empty-icon">🧺</div>
+                <p><strong>Your basket is empty</strong></p>
+                <p>Browse our catalog and add wholesome groceries!</p>
+            </div>
+        </div>
+
+        <div class="cart-footer">
+            <div class="cart-summary-row">
+                <span>Subtotal</span>
+                <span id="cartSubtotal">₹0.00</span>
+            </div>
+            <div class="cart-summary-row">
+                <span>Estimated Tax (5%)</span>
+                <span id="cartTax">₹0.00</span>
+            </div>
+            <div class="cart-summary-row">
+                <span>Eco Delivery</span>
+                <span style="color: var(--primary-dark); font-weight: 600;">FREE</span>
+            </div>
+            <div class="cart-summary-total">
+                <span>Total</span>
+                <span id="cartGrandTotal">₹0.00</span>
+            </div>
+            <button class="btn-checkout" id="checkoutBtn" onclick="openCheckoutModal()" disabled>
+                Proceed to Checkout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Checkout Modal Dialog -->
+    <div class="modal-overlay" id="checkoutModal">
+        <div class="modal-content">
+            <div class="success-icon">✓</div>
+            <h3 style="font-size: 1.4rem; margin-bottom: 0.5rem; color: var(--text-main);">Confirm Your Order</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.25rem;">
+                Deliver fresh goods to registered user: <strong id="modalUserName">Aarav Sharma</strong>
+            </p>
+            <div style="background: #f8faf8; border: 1px solid #e5e7eb; border-radius: var(--radius-sm); padding: 1rem; text-align: left; margin-bottom: 1.25rem; font-size: 0.9rem;">
+                <p><strong>Shipping Address:</strong> Flat 402, Green Glen Layout, Bellandur, Bengaluru</p>
+                <p><strong>Items:</strong> <span id="modalTotalItems">0</span> products</p>
+                <p><strong>Total Amount:</strong> <span id="modalFinalPrice" style="color: var(--primary-darker); font-weight: 700;">₹0.00</span></p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button 
+                    style="flex: 1; padding: 0.75rem; border: 1px solid #d1d5db; background: white; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;"
+                    onclick="closeCheckoutModal()"
+                >Cancel</button>
+                <button 
+                    class="btn-checkout" 
+                    style="flex: 1; padding: 0.75rem;" 
+                    id="confirmOrderBtn"
+                    onclick="placeOrder()"
+                >Place Order</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Success Notification Modal -->
+    <div class="modal-overlay" id="orderSuccessModal">
+        <div class="modal-content">
+            <div class="success-icon" style="background: #dcfce7; color: #16a34a;">🎉</div>
+            <h3 style="font-size: 1.4rem; margin-bottom: 0.5rem; color: var(--text-main);">Order Placed Successfully!</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1rem;">
+                Thank you! Your order has been recorded in the database with ID: <strong id="confirmedOrderId">#101</strong>.
+            </p>
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 0.9rem; font-size: 0.88rem; color: #166534; margin-bottom: 1.25rem;">
+                ✓ Saved into SQLite <code>orders</code> and <code>order_items</code> tables.
+            </div>
+            <button class="btn-checkout" onclick="closeSuccessModal()">Continue Shopping</button>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Store Footer -->
+    <footer class="store-footer">
+        <p>&copy; 2026 <span>FreshCart Market</span> — Relational SQLite Database & Flask Grocery Store Application.</p>
+    </footer>
+
+    <!-- Interactive Client Script -->
+    <script>
+        // Shopping cart state
+        let cart = {};
+
+        // DOM elements
+        const cartDrawer = document.getElementById('cartDrawer');
+        const cartOverlay = document.getElementById('cartOverlay');
+        const cartOpenBtn = document.getElementById('cartOpenBtn');
+        const cartCloseBtn = document.getElementById('cartCloseBtn');
+        const navCartCount = document.getElementById('navCartCount');
+        const navCartTotal = document.getElementById('navCartTotal');
+        const drawerItemCount = document.getElementById('drawerItemCount');
+        const cartItemsContainer = document.getElementById('cartItemsContainer');
+        const cartSubtotal = document.getElementById('cartSubtotal');
+        const cartTax = document.getElementById('cartTax');
+        const cartGrandTotal = document.getElementById('cartGrandTotal');
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        const searchInput = document.getElementById('searchInput');
+        const categoryChips = document.querySelectorAll('.category-chip');
+        const productCards = document.querySelectorAll('.product-card');
+        const visibleCount = document.getElementById('visibleCount');
+
+        // Toggle Drawer
+        function openCart() {
+            cartDrawer.classList.add('active');
+            cartOverlay.classList.add('active');
+        }
+
+        function closeCart() {
+            cartDrawer.classList.remove('active');
+            cartOverlay.classList.remove('active');
+        }
+
+        cartOpenBtn.addEventListener('click', openCart);
+        cartCloseBtn.addEventListener('click', closeCart);
+        cartOverlay.addEventListener('click', closeCart);
+
+        // Add to Cart
+        function addToCart(id, name, price, unit, imageUrl) {
+            if (cart[id]) {
+                cart[id].quantity += 1;
+            } else {
+                cart[id] = { id, name, price, unit, imageUrl, quantity: 1 };
+            }
+            updateCartUI();
+            updateCardAction(id);
+            showToast(`Added ${name} to cart!`);
+        }
+
+        // Change quantity
+        function updateQuantity(id, change) {
+            if (!cart[id]) return;
+            cart[id].quantity += change;
+            if (cart[id].quantity <= 0) {
+                delete cart[id];
+            }
+            updateCartUI();
+            updateCardAction(id);
+        }
+
+        // Update Card Button to show pill controls if item is in cart
+        function updateCardAction(id) {
+            const actionBox = document.getElementById(`action-box-${id}`);
+            if (!actionBox) return;
+
+            const item = cart[id];
+            if (item && item.quantity > 0) {
+                actionBox.innerHTML = `
+                    <div class="cart-control-pill">
+                        <button class="btn-qty" onclick="updateQuantity(${id}, -1)" aria-label="Decrease">&minus;</button>
+                        <span class="qty-display">${item.quantity}</span>
+                        <button class="btn-qty" onclick="updateQuantity(${id}, 1)" aria-label="Increase">&plus;</button>
+                    </div>
+                `;
+            } else {
+                const card = document.getElementById(`product-card-${id}`);
+                const name = card.dataset.name;
+                const price = parseFloat(card.dataset.price);
+                const unit = card.dataset.unit;
+                const image = card.dataset.image;
+                actionBox.innerHTML = `
+                    <button class="btn-add-cart" onclick="addToCart(${id}, '${name.replace(/'/g, "\\'")}', ${price}, '${unit}', '${image}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add to Cart
+                    </button>
+                `;
+            }
+        }
+
+        // Update Cart Drawer and Counter
+        function updateCartUI() {
+            const items = Object.values(cart);
+            let totalCount = 0;
+            let subtotal = 0;
+
+            items.forEach(item => {
+                totalCount += item.quantity;
+                subtotal += item.price * item.quantity;
+            });
+
+            const tax = subtotal * 0.05;
+            const grandTotal = subtotal + tax;
+
+            // Nav badges
+            navCartCount.textContent = totalCount;
+            navCartTotal.textContent = `₹${grandTotal.toFixed(2)}`;
+            drawerItemCount.textContent = totalCount;
+
+            // Totals
+            cartSubtotal.textContent = `₹${subtotal.toFixed(2)}`;
+            cartTax.textContent = `₹${tax.toFixed(2)}`;
+            cartGrandTotal.textContent = `₹${grandTotal.toFixed(2)}`;
+
+            checkoutBtn.disabled = items.length === 0;
+
+            // Drawer content
+            if (items.length === 0) {
+                cartItemsContainer.innerHTML = `
+                    <div class="cart-empty">
+                        <div class="cart-empty-icon">🧺</div>
+                        <p><strong>Your basket is empty</strong></p>
+                        <p style="font-size: 0.85rem; margin-top: 0.25rem;">Browse our catalog and add wholesome groceries!</p>
+                    </div>
+                `;
+            } else {
+                let html = '';
+                items.forEach(item => {
+                    const itemTotal = (item.price * item.quantity).toFixed(2);
+                    html += `
+                        <div class="cart-item">
+                            <img src="${item.imageUrl}" alt="${item.name}" class="cart-item-img">
+                            <div class="cart-item-details">
+                                <div class="cart-item-title">${item.name}</div>
+                                <div class="cart-item-sub">${item.unit} &bull; ₹${item.price.toFixed(2)} each</div>
+                                <div class="cart-item-price">₹${itemTotal}</div>
+                            </div>
+                            <div class="cart-item-controls">
+                                <button class="btn-cart-qty" onclick="updateQuantity(${item.id}, -1)">&minus;</button>
+                                <span class="cart-qty-text">${item.quantity}</span>
+                                <button class="btn-cart-qty" onclick="updateQuantity(${item.id}, 1)">&plus;</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                cartItemsContainer.innerHTML = html;
+            }
+        }
+
+        // Filter and Search logic
+        let selectedCategory = 'all';
+
+        function filterProducts() {
+            const query = searchInput.value.toLowerCase().trim();
+            let count = 0;
+
+            productCards.forEach(card => {
+                const name = card.dataset.name.toLowerCase();
+                const category = card.dataset.category;
+
+                const matchesCategory = (selectedCategory === 'all' || category === selectedCategory);
+                const matchesQuery = name.includes(query);
+
+                if (matchesCategory && matchesQuery) {
+                    card.style.display = 'flex';
+                    count++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            visibleCount.textContent = count;
+        }
+
+        searchInput.addEventListener('input', filterProducts);
+
+        categoryChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                categoryChips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                selectedCategory = chip.dataset.category;
+                filterProducts();
+            });
+        });
+
+        // Checkout & Modal Logic
+        function openCheckoutModal() {
+            const items = Object.values(cart);
+            if (items.length === 0) return;
+
+            let totalCount = 0;
+            let subtotal = 0;
+            items.forEach(item => {
+                totalCount += item.quantity;
+                subtotal += item.price * item.quantity;
+            });
+            const grandTotal = subtotal * 1.05;
+
+            document.getElementById('modalTotalItems').textContent = totalCount;
+            document.getElementById('modalFinalPrice').textContent = `₹${grandTotal.toFixed(2)}`;
+
+            document.getElementById('checkoutModal').classList.add('active');
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkoutModal').classList.remove('active');
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('orderSuccessModal').classList.remove('active');
+        }
+
+        async function placeOrder() {
+            const items = Object.values(cart);
+            if (items.length === 0) return;
+
+            let subtotal = 0;
+            items.forEach(item => subtotal += item.price * item.quantity);
+            const totalAmount = subtotal * 1.05;
+
+            const orderPayload = {
+                user_id: 1, // Jane Doe
+                total_amount: parseFloat(totalAmount.toFixed(2)),
+                items: items.map(i => ({
+                    product_id: i.id,
+                    quantity: i.quantity,
+                    unit_price: i.price
+                }))
+            };
+
+            const confirmBtn = document.getElementById('confirmOrderBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Processing...';
+
+            try {
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderPayload)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    closeCheckoutModal();
+                    closeCart();
+                    document.getElementById('confirmedOrderId').textContent = `#${result.order_id}`;
+                    document.getElementById('orderSuccessModal').classList.add('active');
+
+                    // Reset cart
+                    const itemIds = Object.keys(cart);
+                    cart = {};
+                    updateCartUI();
+                    itemIds.forEach(id => updateCardAction(id));
+                } else {
+                    alert('Error placing order: ' + (result.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Could not submit order to server.');
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Place Order';
+            }
+        }
+
+        // Toast Helper
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<span>🛒</span> ${message}`;
+            const container = document.getElementById('toastContainer');
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                toast.style.transition = 'all 0.25s ease';
+                setTimeout(() => toast.remove(), 250);
+            }, 2500);
+        }
+
+        // Query parameter helpers for demo and automated capture
+        if (window.location.search.includes('cart=open')) {
+            addToCart(1, 'Fresh Red Apples', 149.00, '1 kg', 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=600&q=80');
+            addToCart(1, 'Fresh Red Apples', 149.00, '1 kg', 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=600&q=80');
+            addToCart(2, 'Organic Whole Milk', 68.00, '1 Litre', 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80');
+            openCart();
+        }
+
+        if (window.location.search.includes('order=success')) {
+            document.getElementById('confirmedOrderId').textContent = '#101';
+            document.getElementById('orderSuccessModal').classList.add('active');
+        }
+    </script>
+</body>
+</html>
